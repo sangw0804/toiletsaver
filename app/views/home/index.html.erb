@@ -29,13 +29,46 @@
         var input = document.getElementById('pac-input');
         var searchBox = new google.maps.places.SearchBox(input);
         map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+        var markers = [];
 
         // Bias the SearchBox results towards current map's viewport.
         map.addListener('bounds_changed', function() {
           searchBox.setBounds(map.getBounds());
+
+          markers.forEach(function(marker) {
+            if(marker.getTitle() != "mypoint") {
+              marker.setMap(null);
+            }
+          });
+          //markers = [];
+
+          toiletBound = map.getBounds();
+          var toiletImage = {
+            url: "<%= asset_path 'toiletImage.png' %>",
+            // This marker is 20 pixels wide by 32 pixels high
+          };
+
+          <% @rows.each do |row| %>
+            if(toiletBound.contains({lat: <%= row["Y_WGS84"] %>, lng: <%= row["X_WGS84"] %>})) {
+
+                var marker = new google.maps.Marker({
+                    map: map,
+                    icon: toiletImage,
+                    position: {lat: <%= row["Y_WGS84"] %>, lng: <%= row["X_WGS84"] %>}
+                })
+                marker.addListener('click', function() {
+                    var fname = "<%= row["FNAME"] %>";
+                    if(fname.match("화장실") != "화장실") {
+                        fname += "화장실";
+                    }
+                    $('#textfield').text(fname);
+                });
+               
+                markers.push(marker);
+            }
+          <% end%>
         });
 
-        var markers = [];
         // Listen for the event fired when the user selects a prediction and retrieve
         // more details for that place.
         searchBox.addListener('places_changed', function() {
@@ -72,7 +105,7 @@
             markers.push(new google.maps.Marker({
               map: map,
             //   icon: icon,
-              title: place.name,
+              title: "mypoint",
               position: place.geometry.location
             }));
 
@@ -84,32 +117,6 @@
             }
           });
           map.fitBounds(bounds);
-          toiletBound = map.getBounds();
-          var toiletImage = {
-            url: "<%= asset_path 'toiletImage.png' %>",
-            // This marker is 20 pixels wide by 32 pixels high
-          };
-
-          <% @rows.each do |row| %>
-            if(toiletBound.contains({lat: <%= row["Y_WGS84"] %>, lng: <%= row["X_WGS84"] %>})) {
-
-                var marker = new google.maps.Marker({
-                    map: map,
-                    icon: toiletImage,
-                    position: {lat: <%= row["Y_WGS84"] %>, lng: <%= row["X_WGS84"] %>}
-                })
-                marker.addListener('click', function() {
-                    var fname = "<%= row["FNAME"] %>";
-                    if(fname.match("화장실") != "화장실") {
-                        fname += "화장실";
-                    }
-                    $('#textfield').text(fname);
-                });
-               
-                markers.push(marker);
-                console.log("yes");
-            }
-          <% end%>
         });
       }
 
